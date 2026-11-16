@@ -1,18 +1,33 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>오키나와 가족여행</title>
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f5f2;color:#1b1b1b;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}@media(prefers-color-scheme:dark){body{background:#121212;color:#f0f0f0}form{background:#1c1c1c!important}input[type=password]{background:#2a2a2a!important;color:#f0f0f0}}form{background:#fff;padding:28px 24px;border-radius:16px;width:min(340px,calc(100% - 32px));box-shadow:0 4px 24px rgba(0,0,0,.08)}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 16px;color:#8a8a8a;font-size:14px}input[type=password]{width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #ccc;border-radius:10px;background:#fafafa}label{display:flex;gap:8px;align-items:center;font-size:14px;margin:12px 0}button{width:100%;font:inherit;font-weight:600;padding:12px;border:0;border-radius:10px;background:#0b7a75;color:#fff}button:disabled{opacity:.6}#e{color:#b3261e;font-size:14px;min-height:20px;margin:8px 0 0}</style></head>
-<body><form id="f"><h1>오키나와 가족여행</h1><p>일행에게 받은 비밀번호를 입력하세요.</p><input type="password" id="p" placeholder="비밀번호" autocomplete="current-password" required><label><input type="checkbox" id="r" checked>이 기기에서 30일간 기억</label><button id="b">열기</button><div id="e"></div></form>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>오키나와 가족여행</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f5f2;color:#1b1b1b;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}@media(prefers-color-scheme:dark){body{background:#121212;color:#f0f0f0}form{background:#1c1c1c!important}input[type=password]{background:#2a2a2a!important;color:#f0f0f0}button{color:#0b3b38!important;background:#4fc3bb!important}}form{background:#fff;padding:28px 24px;border-radius:16px;width:min(340px,calc(100% - 32px));box-shadow:0 4px 24px rgba(0,0,0,.08)}h1{font-size:20px;margin:0 0 4px}p{margin:0 0 16px;color:#6e6e6e;font-size:14px}input[type=password]{width:100%;box-sizing:border-box;font:inherit;padding:12px;border:1px solid #ccc;border-radius:10px;background:#fafafa}label{display:flex;gap:8px;align-items:center;font-size:14px;margin:12px 0;min-height:44px}label input{width:20px;height:20px}button{width:100%;min-height:48px;font:inherit;font-weight:600;padding:12px;border:0;border-radius:10px;background:#0b7a75;color:#fff}button:disabled{opacity:.6}:focus-visible{outline:3px solid #0b7a75;outline-offset:2px}#e{color:#b3261e;font-size:14px;min-height:20px;margin:8px 0 0}</style></head>
+<body><form id="f"><h1>오키나와 가족여행</h1><p>일행에게 받은 비밀번호를 입력하세요.</p><input type="password" id="p" placeholder="비밀번호" aria-label="비밀번호" autocomplete="current-password" required><label><input type="checkbox" id="r" checked>이 기기에서 30일간 기억</label><button id="b">열기</button><div id="e" role="alert"></div></form>
 <script>
 (function(){
-var I=600000,K="okinawa-key",S=crypto.subtle,F=["a.txt","b.txt"],shown=false,files=null;
-var $=function(i){return document.getElementById(i)};
-var u=function(s){return Uint8Array.from(atob(s.trim()),function(c){return c.charCodeAt(0)})};
-var b64=function(a){return btoa(String.fromCharCode.apply(null,new Uint8Array(a)))};
-function load(){return files||(files=Promise.all(F.map(function(n){return fetch(n,{cache:"no-cache"}).then(function(r){if(!r.ok)throw new Error("fetch");return r.text()}).then(u)})).catch(function(x){files=null;throw x}))}
-async function unseal(raw){var ds=await load(),k=await S.importKey("raw",raw,"AES-GCM",false,["decrypt"]);for(var d of ds){var z;try{z=await S.decrypt({name:"AES-GCM",iv:d.slice(16,28)},k,d.slice(28))}catch(_){continue}return new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream("gzip"))).text()}return null}
-function render(h){if(shown)return;shown=true;document.open();document.write(h);document.close()}
+var I=600000,S=crypto.subtle,F=["a.txt","b.txt"],shown=false,files=null,at=0,DB="okinawa-auth",OLD="okinawa-key";
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
+function $(i){return document.getElementById(i)}
+function u(s){return Uint8Array.from(atob(s.trim()),function(c){return c.charCodeAt(0)})}
+function b64(a){return btoa(String.fromCharCode.apply(null,new Uint8Array(a)))}
+function idb(m,f){return new Promise(function(ok,no){var q=indexedDB.open(DB,1);q.onupgradeneeded=function(){q.result.createObjectStore("k")};q.onerror=function(){no(q.error)};q.onsuccess=function(){var t=q.result.transaction("k",m),r=f(t.objectStore("k"));t.oncomplete=function(){ok(r&&r.result)};t.onerror=t.onabort=function(){no(t.error)}}})}
+function getK(){return idb("readonly",function(s){return s.get("key")})}
+function putK(v){return idb("readwrite",function(s){return s.put(v,"key")})}
+function delK(){return idb("readwrite",function(s){return s.delete("key")}).catch(function(){})}
+function load(){return files||(files=Promise.all(F.map(function(n){return fetch(n,{cache:"no-cache"}).then(function(r){if(!r.ok)throw 0;var c=+r.headers.get("x-cached-at");if(c)at=c;return r.text()}).then(u)})).catch(function(x){files=null;throw x}))}
+async function open1(k){var ds=await load();for(var d of ds){var z;try{z=await S.decrypt({name:"AES-GCM",iv:d.slice(16,28)},k,d.slice(28))}catch(_){continue}return new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream("gzip"))).text()}return null}
+function render(h){if(shown)return;shown=true;window.TRIP_CACHED_AT=at;document.open();document.write(h);document.close()}
 function busy(on){$("b").disabled=on;$("b").textContent=on?"여는 중…":"열기"}
-(async function(){var s;try{s=JSON.parse(localStorage.getItem(K)||"null")}catch(_){}if(!s||!(s.x>Date.now()))return;busy(true);try{var ds=await load();if(s.s===b64(ds[0].slice(0,16))){var h=await unseal(u(s.k));if(h)return render(h)}try{localStorage.removeItem(K)}catch(_){}}catch(_){}busy(false)})();
-$("f").addEventListener("submit",async function(ev){ev.preventDefault();if(shown)return;$("e").textContent="";busy(true);try{var ds=await load(),salt=ds[0].slice(0,16);var base=await S.importKey("raw",new TextEncoder().encode($("p").value),"PBKDF2",false,["deriveBits"]);var raw=await S.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:salt,iterations:I},base,256);var h=await unseal(raw);if(!h){$("e").textContent="비밀번호가 맞지 않아요";busy(false);return}try{if($("r").checked)localStorage.setItem(K,JSON.stringify({k:b64(raw),s:b64(salt),x:Date.now()+2592e6}));else localStorage.removeItem(K)}catch(_){}render(h)}catch(x){$("e").textContent="불러오지 못했어요. 인터넷 연결을 확인해 주세요.";busy(false)}});
+(async function(){
+try{var o=JSON.parse(localStorage.getItem(OLD)||"null");localStorage.removeItem(OLD);if(o&&o.x>Date.now())await putK({k:await S.importKey("raw",u(o.k),"AES-GCM",false,["decrypt"]),s:o.s,x:o.x})}catch(_){}
+var s;try{s=await getK()}catch(_){}
+if(!s||!(s.x>Date.now()))return;busy(true);
+try{var ds=await load();if(s.s===b64(ds[0].slice(0,16))){var h=await open1(s.k);if(h)return render(h)}await delK()}catch(_){$("e").textContent="불러오지 못했어요. 인터넷 연결을 확인해 주세요."}
+busy(false)})();
+$("f").addEventListener("submit",async function(ev){ev.preventDefault();if(shown)return;$("e").textContent="";busy(true);
+try{var ds=await load(),salt=ds[0].slice(0,16);var base=await S.importKey("raw",new TextEncoder().encode($("p").value),"PBKDF2",false,["deriveBits"]);
+var k=await S.importKey("raw",await S.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:salt,iterations:I},base,256),"AES-GCM",false,["decrypt"]);
+var h=await open1(k);if(!h){$("e").textContent="비밀번호가 맞지 않아요";busy(false);return}
+try{if($("r").checked)await putK({k:k,s:b64(salt),x:Date.now()+2592e6});else await delK()}catch(_){}render(h)}
+catch(x){$("e").textContent="불러오지 못했어요. 인터넷 연결을 확인해 주세요.";busy(false)}});
 })();
 </script></body></html>
