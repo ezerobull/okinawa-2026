@@ -1,11 +1,14 @@
 // 오키나와 가족여행 · 오프라인용 서비스 워커
-const V = 'okinawa-v1', TILES = 'okinawa-tiles', TMAX = 200;
+const V = 'okinawa-v2', TILES = 'okinawa-tiles', TMAX = 200;
 const LIB = ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css","https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"];
 const stamp = async r => { const h = new Headers(r.headers); h.set('x-cached-at', String(Date.now())); return new Response(await r.blob(), { status: r.status, statusText: r.statusText, headers: h }); };
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(V);
-    await Promise.all(['./', 'a.txt', 'b.txt'].map(async p => { try { const r = await fetch(p, { cache: 'no-cache' }); if (r.ok) await c.put(p, await stamp(r)); } catch (_) {} }));
+    const put = async p => { try { const r = await fetch(p, { cache: 'no-cache' }); if (r.ok) await c.put(p, await stamp(r)); return r; } catch (_) {} };
+    await put('./');
+    try { const m = await (await fetch('parts.json', { cache: 'no-cache' })).clone().json(); await put('parts.json');
+      await Promise.all(['a', 'b'].flatMap(f => Array.from({ length: m[f] }, (_, i) => put(f + '-' + i + '.txt')))); } catch (_) {}
     await Promise.all(LIB.map(async u => { try { const r = await fetch(u, { mode: 'cors', credentials: 'omit' }); if (r.ok) await c.put(u, r); } catch (_) {} }));
     self.skipWaiting();
   })());
@@ -39,7 +42,7 @@ self.addEventListener('fetch', e => {
   if (u.origin === location.origin) {
     const base = new URL('./', self.registration.scope).pathname;
     const p = u.pathname.slice(base.length);
-    if (p === 'a.txt' || p === 'b.txt') e.respondWith(netFirst(req, p));
+    if (p === 'parts.json' || /^[ab](-\d+)?\.txt$/.test(p)) e.respondWith(netFirst(req, p));   // 쿼리(?v=)는 무시하고 파일 이름으로 캐시
     else if (req.mode === 'navigate' || p === '' || p === 'index.html') e.respondWith(netFirst(req, './'));
     return;
   }
